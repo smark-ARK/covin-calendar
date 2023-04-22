@@ -69,7 +69,7 @@ class GoogleOAuth2CallbackView(APIView):
 
         request.session["google_oauth2_credentials"] = credentials.to_json()
 
-        return Response({"events": events.__dict__})
+        return Response({"events": events})
 
 
 # class GoogleOAuth2EventsView(APIView):
