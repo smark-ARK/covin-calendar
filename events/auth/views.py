@@ -6,6 +6,9 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 class GoogleOAuth2InitView(APIView):
@@ -33,8 +36,39 @@ class GoogleOAuth2CallbackView(APIView):
         authorization_response = request.build_absolute_uri()
         flow.fetch_token(authorization_response=authorization_response)
         credentials = flow.credentials
+        try:
+            service = build("calendar", "v3", credentials=creds)
+
+            # Call the Calendar API
+            now = datetime.datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
+            print("Getting the upcoming 10 events")
+            events_result = (
+                service.events()
+                .list(
+                    calendarId="primary",
+                    timeMin=now,
+                    maxResults=10,
+                    singleEvents=True,
+                    orderBy="startTime",
+                )
+                .execute()
+            )
+            events = events_result.get("items", [])
+
+            if not events:
+                print("No upcoming events found.")
+                return
+
+            # Prints the start and name of the next 10 events
+            for event in events:
+                start = event["start"].get("dateTime", event["start"].get("date"))
+                print(start, event["summary"])
+        except HttpError as error:
+            print("An error occurred: %s" % error)
+
         request.session["google_oauth2_credentials"] = credentials.to_json()
-        return HttpResponseRedirect("/")
+
+        return Response({"events": events.__dict__})
 
 
 # class GoogleOAuth2EventsView(APIView):
