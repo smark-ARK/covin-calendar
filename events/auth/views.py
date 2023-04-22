@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from datetime import datetime
 
 
 class GoogleOAuth2InitView(APIView):
@@ -37,10 +38,10 @@ class GoogleOAuth2CallbackView(APIView):
         flow.fetch_token(authorization_response=authorization_response)
         credentials = flow.credentials
         try:
-            service = build("calendar", "v3", credentials=creds)
+            service = build("calendar", "v3", credentials=credentials)
 
             # Call the Calendar API
-            now = datetime.datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
+            now = datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
             print("Getting the upcoming 10 events")
             events_result = (
                 service.events()
